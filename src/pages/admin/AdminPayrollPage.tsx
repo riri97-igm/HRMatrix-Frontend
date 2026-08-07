@@ -2,8 +2,18 @@ import { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { fetchAllPayslips, generatePayslip } from '../../store/slices/payrollSlice';
+import {
+  fetchAllPayslips,
+  generatePayslip,
+} from '../../store/slices/payrollSlice';
 import { DollarSign, Plus, X } from 'lucide-react';
+import { formatCurrency } from '../../utils/currency';
+
+const months = [
+  'January','February','March','April',
+  'May','June','July','August',
+  'September','October','November','December',
+];
 
 const AdminPayrollPage = () => {
   const dispatch = useAppDispatch();
@@ -11,6 +21,7 @@ const AdminPayrollPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth() + 1);
+  const [msg, setMsg] = useState('');
   const [form, setForm] = useState({
     employeeId: '',
     employeeName: '',
@@ -26,7 +37,6 @@ const AdminPayrollPage = () => {
     employeeAge: '',
     notes: '',
   });
-  const [msg, setMsg] = useState('');
 
   useEffect(() => {
     dispatch(fetchAllPayslips({ year: filterYear, month: filterMonth }));
@@ -56,21 +66,13 @@ const AdminPayrollPage = () => {
     }
   };
 
-  const months = [
-    'January', 'February', 'March', 'April',
-    'May', 'June', 'July', 'August',
-    'September', 'October', 'November', 'December',
-  ];
-
   return (
     <Layout>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Payroll</h2>
-          <p className="text-gray-500 text-sm">
-            Generate and manage payslips
-          </p>
+          <p className="text-gray-500 text-sm">Generate and manage payslips</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -161,13 +163,13 @@ const AdminPayrollPage = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {p.grossSalary.toLocaleString()}
+                    {formatCurrency(p.grossSalary, p.country)}
                   </td>
                   <td className="px-4 py-3 text-red-500">
-                    -{p.totalDeduction.toLocaleString()}
+                    -{formatCurrency(p.totalDeduction, p.country)}
                   </td>
                   <td className="px-4 py-3 font-bold text-green-600">
-                    {p.netSalary.toLocaleString()}
+                    {formatCurrency(p.netSalary, p.country)}
                   </td>
                 </tr>
               ))}
@@ -250,9 +252,8 @@ const AdminPayrollPage = () => {
                 </div>
               </div>
 
-              {/* Earnings */}
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide pt-2">
-                Earnings
+                Earnings ({form.country === 'Myanmar' ? 'MMK' : 'SGD'})
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -277,9 +278,8 @@ const AdminPayrollPage = () => {
                 ))}
               </div>
 
-              {/* Deductions */}
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide pt-2">
-                Manual Deductions
+                Manual Deductions ({form.country === 'Myanmar' ? 'MMK' : 'SGD'})
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>

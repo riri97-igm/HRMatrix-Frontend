@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { Payslip, Loan } from '../../types';
-import api from '../../services/api';
+import { payrollApi } from '../../services/api';
 
 interface PayrollState {
   payslips: Payslip[];
@@ -23,7 +23,7 @@ export const generatePayslip = createAsyncThunk(
   'payroll/generate',
   async (data: object, { rejectWithValue }) => {
     try {
-      const response = await api.post('/api/payroll', data);
+      const response = await payrollApi.post('/api/payroll', data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(

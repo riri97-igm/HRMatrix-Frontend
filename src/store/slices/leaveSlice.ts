@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { LeaveRequest, LeaveBalance } from '../../types';
-import api from '../../services/api';
+import { leaveApi } from '../../services/api';
 
 interface LeaveState {
   leaves: LeaveRequest[];
@@ -23,7 +23,7 @@ export const applyLeave = createAsyncThunk(
   'leave/apply',
   async (data: object, { rejectWithValue }) => {
     try {
-      const response = await api.post('/api/leave', data);
+      const response = await leaveApi.post('/api/leave', data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to apply leave');

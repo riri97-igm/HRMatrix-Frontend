@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Employee, Department } from '../../types';
-
+import { employeeApi } from '../../services/api';
 interface EmployeeState {
   employees: Employee[];
   departments: Department[];
@@ -23,7 +23,7 @@ export const fetchEmployees = createAsyncThunk(
   'employee/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/employees');
+      const response = await employeeApi.get('/api/employees');
       return response.data as Employee[];
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch employees');
@@ -62,7 +62,7 @@ export const fetchDepartments = createAsyncThunk(
   'employee/fetchDepartments',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/departments');
+      const response = await employeeApi.get('/api/departments');
       return response.data as Department[];
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch departments');
