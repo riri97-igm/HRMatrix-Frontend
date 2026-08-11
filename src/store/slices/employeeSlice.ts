@@ -36,7 +36,7 @@ export const fetchTeam = createAsyncThunk(
   'employee/fetchTeam',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/employees/team');
+      const response = await employeeApi.get('/api/employees/team');
       return response.data as Employee[];
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch team');
@@ -49,7 +49,7 @@ export const fetchMyProfile = createAsyncThunk(
   'employee/fetchMyProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/employees/me');
+      const response = await employeeApi.get('/api/employees/me');
       return response.data as Employee;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
@@ -75,7 +75,7 @@ export const createEmployee = createAsyncThunk(
   'employee/create',
   async (data: object, { rejectWithValue }) => {
     try {
-      const response = await api.post('/api/employees', data);
+      const response = await employeeApi.post('/api/employees', data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create employee');
@@ -88,7 +88,7 @@ export const updateEmployee = createAsyncThunk(
   'employee/update',
   async ({ id, data }: { id: number; data: object }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/api/employees/${id}`, data);
+      const response = await employeeApi.put(`/api/employees/${id}`, data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update employee');
@@ -101,7 +101,7 @@ export const deactivateEmployee = createAsyncThunk(
   'employee/deactivate',
   async (id: number, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/api/employees/${id}`);
+      const response = await employeeApi.delete(`/api/employees/${id}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to deactivate employee');

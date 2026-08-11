@@ -36,7 +36,7 @@ export const fetchMyLeaves = createAsyncThunk(
   'leave/fetchMyLeaves',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/leave/my');
+      const response = await leaveApi.get('/api/leave/my');
       return response.data as LeaveRequest[];
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch leaves');
@@ -49,7 +49,7 @@ export const fetchLeaveBalance = createAsyncThunk(
   'leave/fetchBalance',
   async (joinDate: string, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/api/leave/balance?joinDate=${joinDate}`);
+      const response = await leaveApi.get(`/api/leave/balance?joinDate=${joinDate}`);
       return response.data as LeaveBalance;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch balance');
@@ -62,7 +62,7 @@ export const fetchPendingLeaves = createAsyncThunk(
   'leave/fetchPending',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/leave/pending');
+      const response = await leaveApi.get('/api/leave/pending');
       return response.data as LeaveRequest[];
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch pending leaves');
@@ -75,7 +75,7 @@ export const fetchAllLeaves = createAsyncThunk(
   'leave/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/leave/all');
+      const response = await leaveApi.get('/api/leave/all');
       return response.data as LeaveRequest[];
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch all leaves');
@@ -91,7 +91,7 @@ export const reviewLeave = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.put(`/api/leave/${id}/review`, {
+      const response = await leaveApi.put(`/api/leave/${id}/review`, {
         isApproved,
         comment,
       });

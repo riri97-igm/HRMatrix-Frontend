@@ -38,7 +38,7 @@ export const fetchMyPayslips = createAsyncThunk(
   'payroll/fetchMyPayslips',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/payroll/my');
+      const response = await payrollApi.get('/api/payroll/my');
       return response.data as Payslip[];
     } catch (error: any) {
       return rejectWithValue(
@@ -53,7 +53,7 @@ export const fetchRecentPayslips = createAsyncThunk(
   'payroll/fetchRecent',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/payroll/my/recent');
+      const response = await payrollApi.get('/api/payroll/my/recent');
       return response.data as Payslip[];
     } catch (error: any) {
       return rejectWithValue(
@@ -74,7 +74,7 @@ export const fetchAllPayslips = createAsyncThunk(
       const params = new URLSearchParams();
       if (year) params.append('year', year.toString());
       if (month) params.append('month', month.toString());
-      const response = await api.get(`/api/payroll/all?${params.toString()}`);
+      const response = await payrollApi.get(`/api/payroll/all?${params.toString()}`);
       return response.data as Payslip[];
     } catch (error: any) {
       return rejectWithValue(
@@ -89,7 +89,7 @@ export const createLoan = createAsyncThunk(
   'payroll/createLoan',
   async (data: object, { rejectWithValue }) => {
     try {
-      const response = await api.post('/api/loan', data);
+      const response = await payrollApi.post('/api/loan', data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -104,7 +104,7 @@ export const fetchMyLoans = createAsyncThunk(
   'payroll/fetchMyLoans',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/loan/my');
+      const response = await payrollApi.get('/api/loan/my');
       return response.data as Loan[];
     } catch (error: any) {
       return rejectWithValue(
@@ -119,7 +119,7 @@ export const fetchAllLoans = createAsyncThunk(
   'payroll/fetchAllLoans',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/loan/all');
+      const response = await payrollApi.get('/api/loan/all');
       return response.data as Loan[];
     } catch (error: any) {
       return rejectWithValue(
@@ -134,7 +134,7 @@ export const settleLoan = createAsyncThunk(
   'payroll/settleLoan',
   async (id: number, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/api/loan/${id}/settle`);
+      const response = await payrollApi.put(`/api/loan/${id}/settle`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(

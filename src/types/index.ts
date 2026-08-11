@@ -59,6 +59,7 @@ export interface Payslip {
   id: number;
   employeeId: number;
   employeeName: string;
+  departmentName: string;
   month: number;
   year: number;
   country: string;
@@ -91,4 +92,38 @@ export interface Loan {
   startDate: string;
   settledDate?: string;
   notes: string;
+}
+export interface TaxBracket {
+  id: number;
+  country: string;
+  minIncome: number;
+  maxIncome: number;
+  taxRate: number;
+  description: string;
+}
+
+export interface AgeBracket {
+  id: number;
+  countryCode: string;
+  minAge: number;
+  maxAge: number;
+  employeeRate: number;
+  employerRate: number;
+  description: string;
+}
+
+export interface CountryPolicy {
+  id: number;
+  countryCode: string;
+  countryName: string;
+  currency: string;
+  flagEmoji: string;
+  socialContributionLabel: string;
+  socialContributionEmployeeRate: number;
+  socialContributionEmployerRate: number;
+  hasProgressiveTax: boolean;
+  hasAgeBased: boolean;
+  isActive: boolean;
+  taxBrackets: TaxBracket[];
+  ageBrackets: AgeBracket[];
 }
