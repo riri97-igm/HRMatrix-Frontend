@@ -13,6 +13,10 @@ import AdminLeavePage from './pages/admin/AdminLeavePage';
 import AdminPayrollPage from './pages/admin/AdminPayrollPage';
 import AdminLoansPage from './pages/admin/AdminLoansPage';
 import CountryPoliciesPage from './pages/admin/CountryPoliciesPage';
+import DepartmentPage from './pages/admin/DepartmentPage';
+import ReportsPage from './pages/admin/ReportsPage';
+import LeaveBalancePage from './pages/admin/LeaveBalancePage';
+import BulkPayrollPage from './pages/admin/BulkPayrollPage';
 
 // Manager
 import ManagerDashboard from './pages/manager/ManagerDashboard';
@@ -24,6 +28,7 @@ import EmployeeProfilePage from './pages/employee/EmployeeProfilePage';
 import EmployeeLeavePage from './pages/employee/EmployeeLeavePage';
 import EmployeePayslipsPage from './pages/employee/EmployeePayslipsPage';
 import EmployeeLoansPage from './pages/employee/EmployeeLoansPage';
+import AdminProfilePage from './pages/admin/AdminProfilePage';
 
 // Protected Route
 const ProtectedRoute = ({
@@ -57,6 +62,22 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profile"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <AdminProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/employees"
           element={
             <ProtectedRoute roles={['Admin']}>
@@ -73,10 +94,26 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/admin/leave-balance"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <LeaveBalancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/payroll"
           element={
             <ProtectedRoute roles={['Admin']}>
               <AdminPayrollPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/bulk-payroll"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <BulkPayrollPage />
             </ProtectedRoute>
           }
         />
@@ -93,6 +130,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={['Admin']}>
               <CountryPoliciesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/departments"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <DepartmentPage />
             </ProtectedRoute>
           }
         />

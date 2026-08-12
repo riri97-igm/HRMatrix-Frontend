@@ -6,8 +6,9 @@ import {
   fetchEmployees,
   fetchDepartments,
 } from '../../store/slices/employeeSlice';
-import { Users, Plus, Search, Trash2, X, Pencil } from 'lucide-react';
+import { Users, Plus, Search, Trash2, X, Pencil, Download } from 'lucide-react';
 import { identityApi, employeeApi } from '../../services/api';
+import { exportEmployeesExcel } from '../../utils/exportExcel';
 
 const EmployeeListPage = () => {
   const dispatch = useAppDispatch();
@@ -190,13 +191,23 @@ const EmployeeListPage = () => {
             Manage all employees — {employees.length} total
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-        >
-          <Plus size={16} />
-          Add Employee
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => exportEmployeesExcel(filtered)}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+          >
+            <Download size={16} />
+            Export Excel
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+          >
+            <Plus size={16} />
+            Add Employee
+          </button>
+        </div>
       </div>
 
       {msg && (

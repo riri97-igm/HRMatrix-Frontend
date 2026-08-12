@@ -13,6 +13,8 @@ import {
 } from '../../store/slices/payrollSlice';
 import { Landmark, CheckCircle, XCircle, Search } from 'lucide-react';
 import type { Loan } from '../../types';
+import { exportLoansExcel } from '../../utils/exportExcel';
+import { Download } from 'lucide-react';
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -100,8 +102,8 @@ const AdminLoansPage = () => {
 
       {msg && (
         <div className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${msg.includes('rejected') || msg.includes('Please')
-            ? 'bg-red-50 text-red-700'
-            : 'bg-green-50 text-green-700'
+          ? 'bg-red-50 text-red-700'
+          : 'bg-green-50 text-green-700'
           }`}>
           {msg}
         </div>
@@ -118,8 +120,8 @@ const AdminLoansPage = () => {
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeTab === tab.key
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-gray-500 hover:bg-gray-50'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-white text-gray-500 hover:bg-gray-50'
               }`}
           >
             {tab.label}
@@ -174,6 +176,22 @@ const AdminLoansPage = () => {
                     {statusLabel(loan.status)}
                   </span>
                 </div>
+              </div>
+
+              {/* Download Excel */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Loan Management</h2>
+                  <p className="text-gray-500 text-sm">Review and approve employee loan requests</p>
+                </div>
+                <button
+                  onClick={() => exportLoansExcel(filtered)}
+                  disabled={filtered.length === 0}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+                >
+                  <Download size={16} />
+                  Export Excel
+                </button>
               </div>
 
               {/* Loan Details */}
@@ -335,10 +353,10 @@ const ApprovalStep = ({
 }) => (
   <div className="flex flex-col items-center">
     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${approved
-        ? 'bg-green-100 text-green-700'
-        : rejected
-          ? 'bg-red-100 text-red-700'
-          : 'bg-gray-100 text-gray-400'
+      ? 'bg-green-100 text-green-700'
+      : rejected
+        ? 'bg-red-100 text-red-700'
+        : 'bg-gray-100 text-gray-400'
       }`}>
       {approved ? '✓' : rejected ? '✗' : label[0]}
     </div>

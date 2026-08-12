@@ -7,6 +7,10 @@ import {
   CheckSquare,
   Landmark,
   Globe,
+  Building2,
+  BarChart2,
+  CalendarDays,
+  Layers,
 } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -15,6 +19,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { logout } from '../../store/slices/authSlice';
 import { fetchCountries, setSelectedCountry } from '../../store/slices/settingsSlice';
 import type { CountryPolicy } from '../../types';
+import NotificationCenter from '../NotificationCenter';
 
 interface NavItem {
   label: string;
@@ -25,10 +30,16 @@ interface NavItem {
 const adminNav: NavItem[] = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutGrid size={18} /> },
   { label: 'Employees', path: '/admin/employees', icon: <Users size={18} /> },
+  { label: 'Departments', path: '/admin/departments', icon: <Building2 size={18} /> },
   { label: 'Leave Requests', path: '/admin/leaves', icon: <ClipboardList size={18} /> },
   { label: 'Payroll', path: '/admin/payroll', icon: <DollarSign size={18} /> },
+  { label: 'Bulk Payroll', path: '/admin/bulk-payroll', icon: <Layers size={18} /> },
   { label: 'Loans', path: '/admin/loans', icon: <Landmark size={18} /> },
+  { label: 'Leave Balance', path: '/admin/leave-balance', icon: <CalendarDays size={18} /> },
+  { label: 'Reports', path: '/admin/reports', icon: <BarChart2 size={18} /> },
+  { label: 'My Profile', path: '/admin/profile', icon: <User size={18} /> },
   { label: 'Country Policies', path: '/admin/countries', icon: <Globe size={18} /> },
+
 ];
 
 const managerNav: NavItem[] = [
@@ -103,7 +114,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               key={item.path}
               to={item.path}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg mb-1 text-sm transition-colors duration-150
-                ${location.pathname === item.path
+              ${location.pathname === item.path
                   ? 'bg-indigo-600 text-white font-semibold'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                 }`}
@@ -143,9 +154,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-700">
-          <p className="text-sm text-gray-400 truncate mb-3">
-            {user?.fullName}
-          </p>
+          <p className="text-sm text-gray-400 truncate mb-3">{user?.fullName}</p>
           <button
             onClick={handleLogout}
             className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 rounded-lg transition duration-200"
@@ -155,10 +164,41 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 overflow-y-auto">
-        {children}
-      </main>
+      {/* Right Side */}
+      <div className="flex-1 flex flex-col">
+
+        {/* Top Header Bar */}
+        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric',
+                month: 'long', day: 'numeric'
+              })}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Notification Bell */}
+            <NotificationCenter />
+
+            {/* User Info */}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm">
+                {user?.fullName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{user?.fullName}</p>
+                <p className="text-xs text-gray-400">{user?.role}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };
