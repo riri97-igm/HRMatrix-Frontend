@@ -9,6 +9,7 @@ import {
 import { fetchEmployees } from '../../store/slices/employeeSlice';
 import { DollarSign, Plus, X, Search } from 'lucide-react';
 import { formatCurrency } from '../../utils/currency';
+import { leaveApi, payrollApi } from '../../services/api';
 const months = [
   'January', 'February', 'March', 'April',
   'May', 'June', 'July', 'August',
@@ -58,7 +59,57 @@ const AdminPayrollPage = () => {
     totalDeduction: 0,
     netSalary: 0,
   });
+  const [employeeLoans, setEmployeeLoans] = useState<any[]>([]);
+  const [unpaidLeaveDays, setUnpaidLeaveDays] = useState(0);
+  const [unpaidLeaveDeduction, setUnpaidLeaveDeduction] = useState(0);
+  const [loanDeduction, setLoanDeduction] = useState(0);
+  const getWorkingDays = (year: number, month: number) => {
+    let days = 0;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    for (let i = 1; i <= daysInMonth; i++) {
+      const day = new Date(year, month - 1, i).getDay();
+      if (day !== 0 && day !== 6) days++;
+    }
+    return days;
+  };
 
+  const fetchEmployeePayrollData = async (
+    employeeId: number,
+    month: number,
+    year: number,
+    basicSalary: number
+  ) => {
+    try {
+      const loanRes = await payrollApi.get(`/api/loan/employee/${employeeId}`);
+      const activeLoans = loanRes.data.filter((l: any) => !l.isSettled);
+      const totalLoanDeduction = activeLoans.reduce(
+        (sum: number, l: any) => sum + l.monthlyDeduction, 0
+      );
+      setEmployeeLoans(activeLoans);
+      setLoanDeduction(totalLoanDeduction);
+    } catch {
+      setEmployeeLoans([]);
+      setLoanDeduction(0);
+    }
+
+    try {
+      const leaveRes = await leaveApi.get(
+        `/api/leave/unpaid?employeeId=${employeeId}&month=${month}&year=${year}`
+      );
+      const unpaidDays = leaveRes.data.totalUnpaidDays || 0;
+      setUnpaidLeaveDays(unpaidDays);
+      if (unpaidDays > 0 && basicSalary > 0) {
+        const workingDays = getWorkingDays(year, month);
+        const dailyRate = basicSalary / workingDays;
+        setUnpaidLeaveDeduction(Math.round(dailyRate * unpaidDays * 100) / 100);
+      } else {
+        setUnpaidLeaveDeduction(0);
+      }
+    } catch {
+      setUnpaidLeaveDays(0);
+      setUnpaidLeaveDeduction(0);
+    }
+  };
   useEffect(() => {
     dispatch(fetchAllPayslips({ year: filterYear, month: filterMonth }));
     dispatch(fetchEmployees());
@@ -99,8 +150,7 @@ const AdminPayrollPage = () => {
         // Calculate progressive tax
         const annualGross = gross * 12;
         let annualTax = 0;
-        const brackets = currentPolicy.taxBrackets.sort((a: any, b: any) => a.minIncome - b.minIncome);
-
+        const brackets = [...currentPolicy.taxBrackets].sort((a, b) => a.minIncome - b.minIncome);
         for (const bracket of brackets) {
           if (annualGross <= bracket.minIncome) break;
           const taxable = Math.min(annualGross - bracket.minIncome, bracket.maxIncome - bracket.minIncome);
@@ -124,7 +174,8 @@ const AdminPayrollPage = () => {
       }
     }
 
-    const totalDeduction = tax + socialContribution + cpfEmployee + otherDeduction;
+    // CPF not deducted for Singapore - employee pays directly to IRAS
+    const totalDeduction = tax + socialContribution + otherDeduction + loanDeduction + unpaidLeaveDeduction;
     const net = gross - totalDeduction;
 
     setPreview({
@@ -133,13 +184,13 @@ const AdminPayrollPage = () => {
       socialContribution,
       cpfEmployee,
       cpfEmployer,
-      loanDeduction: 0,
+      loanDeduction,
       totalDeduction,
-      netSalary: net,
+      netSalary: gross - totalDeduction,
     });
   }, [form.basicSalary, form.allowance, form.overtimePay, form.yearEndBonus,
-  form.thirteenthMonth, form.otherDeduction, form.employeeAge, form.countryCode, countries]);
-
+  form.thirteenthMonth, form.otherDeduction, form.employeeAge, form.countryCode,
+    countries, loanDeduction, unpaidLeaveDeduction]);
   // Auto populate employee data
   const handleEmployeeIdChange = (value: string) => {
     setForm({ ...form, employeeId: value });
@@ -152,6 +203,12 @@ const AdminPayrollPage = () => {
         departmentName: emp.departmentName,
         basicSalary: emp.baseSalary.toString(),
       }));
+      fetchEmployeePayrollData(
+        parseInt(value),
+        form.month,
+        form.year,
+        emp.baseSalary
+      );
     }
   };
 
@@ -594,13 +651,49 @@ const AdminPayrollPage = () => {
                         negative
                       />
                     )}
-                    {currentPolicy?.hasAgeBased && preview.cpfEmployee > 0 && (
-                      <PreviewRow
-                        label={`${currentPolicy.socialContributionLabel} Employee`}
-                        value={preview.cpfEmployee}
-                        currency={currency}
-                        negative
-                      />
+                    {/* Loan Deduction */}
+                    {loanDeduction > 0 && (
+                      <div className="bg-orange-50 rounded-lg p-2 mt-1 space-y-1">
+                        <p className="text-xs font-bold text-orange-600 mb-1">
+                          🏦 Active Loans
+                        </p>
+                        {employeeLoans.map((loan: any) => (
+                          <PreviewRow
+                            key={loan.id}
+                            label={`Loan #${loan.id} (Remaining: ${currency} ${loan.remainingBalance.toLocaleString()})`}
+                            value={loan.monthlyDeduction}
+                            currency={currency}
+                            negative
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Unpaid Leave Deduction */}
+                    {unpaidLeaveDays > 0 && (
+                      <div className="bg-red-50 rounded-lg p-2 mt-1">
+                        <p className="text-xs font-bold text-red-600 mb-1">
+                          📅 Unpaid Leave
+                        </p>
+                        <PreviewRow
+                          label={`${unpaidLeaveDays} unpaid day${unpaidLeaveDays > 1 ? 's' : ''} this month`}
+                          value={unpaidLeaveDeduction}
+                          currency={currency}
+                          negative
+                        />
+                      </div>
+                    )}
+                    {/* CPF - reference only for Singapore */}
+                    {currentPolicy?.hasAgeBased && (preview.cpfEmployee > 0 || preview.cpfEmployer > 0) && (
+                      <div className="bg-blue-50 rounded-xl p-3 mt-2">
+                        <p className="text-xs font-bold text-blue-600 mb-1">
+                          CPF Reference (Not deducted)
+                        </p>
+                        {preview.cpfEmployee > 0 && (
+                          <PreviewRow label={`${currentPolicy.socialContributionLabel} Employee`}
+                            value={preview.cpfEmployee} currency={currency} />
+                        )}
+                      </div>
                     )}
                     {currentPolicy?.hasAgeBased && preview.cpfEmployer > 0 && (
                       <PreviewRow

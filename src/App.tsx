@@ -12,6 +12,7 @@ import EmployeeListPage from './pages/admin/EmployeeListPage';
 import AdminLeavePage from './pages/admin/AdminLeavePage';
 import AdminPayrollPage from './pages/admin/AdminPayrollPage';
 import AdminLoansPage from './pages/admin/AdminLoansPage';
+import CountryPoliciesPage from './pages/admin/CountryPoliciesPage';
 
 // Manager
 import ManagerDashboard from './pages/manager/ManagerDashboard';
@@ -84,6 +85,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={['Admin']}>
               <AdminLoansPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/countries"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <CountryPoliciesPage />
             </ProtectedRoute>
           }
         />

@@ -10,7 +10,7 @@ export interface AuthUser {
 
 export interface Employee {
   id: number;
-  employeeId: number;
+  userId: number;
   fullName: string;
   email: string;
   phone: string;
@@ -21,6 +21,9 @@ export interface Employee {
   baseSalary: number;
   joinDate: string;
   isActive: boolean;
+  status: string;
+  resignationDate?: string;
+  remarks?: string;
 }
 
 export interface Department {
@@ -85,12 +88,32 @@ export interface Loan {
   id: number;
   employeeId: number;
   employeeName: string;
+  departmentName: string;
+  managerId?: number;
+  loanType: string;
+  requestedAmount: number;
   totalLoanAmount: number;
   monthlyDeduction: number;
   remainingBalance: number;
+  repaymentMonths: number;
+  purpose: string;
+  status: string;
   isSettled: boolean;
-  startDate: string;
+  appliedDate: string;
+  startDate?: string;
   settledDate?: string;
+  hrApprovedByName: string;
+  hrApprovedAt?: string;
+  hrComment: string;
+  managerApprovedByName: string;
+  managerApprovedAt?: string;
+  managerComment: string;
+  cfoApprovedByName: string;
+  cfoApprovedAt?: string;
+  cfoComment: string;
+  rejectedByName: string;
+  rejectionReason: string;
+  rejectedAt?: string;
   notes: string;
 }
 export interface TaxBracket {

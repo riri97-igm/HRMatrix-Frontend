@@ -128,6 +128,139 @@ export const fetchAllLoans = createAsyncThunk(
     }
   }
 );
+// Apply for loan (Employee)
+export const applyLoan = createAsyncThunk(
+  'payroll/applyLoan',
+  async (data: object, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.post('/api/loan/apply', data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to apply for loan'
+      );
+    }
+  }
+);
+
+// Fetch pending HR loans
+export const fetchPendingHRLoans = createAsyncThunk(
+  'payroll/fetchPendingHR',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.get('/api/loan/pending-hr');
+      return response.data as Loan[];
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch pending loans'
+      );
+    }
+  }
+);
+
+// Fetch pending manager loans
+export const fetchPendingManagerLoans = createAsyncThunk(
+  'payroll/fetchPendingManager',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.get('/api/loan/pending-manager');
+      return response.data as Loan[];
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch pending loans'
+      );
+    }
+  }
+);
+
+// Fetch pending CFO loans
+export const fetchPendingCFOLoans = createAsyncThunk(
+  'payroll/fetchPendingCFO',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.get('/api/loan/pending-cfo');
+      return response.data as Loan[];
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch pending loans'
+      );
+    }
+  }
+);
+
+// HR approve loan
+export const hrApproveLoan = createAsyncThunk(
+  'payroll/hrApprove',
+  async ({ id, comment }: { id: number; comment: string }, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.put(`/api/loan/${id}/hr-approve`, { comment });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to approve loan'
+      );
+    }
+  }
+);
+
+// Manager approve loan
+export const managerApproveLoan = createAsyncThunk(
+  'payroll/managerApprove',
+  async ({ id, comment }: { id: number; comment: string }, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.put(`/api/loan/${id}/manager-approve`, { comment });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to approve loan'
+      );
+    }
+  }
+);
+
+// CFO approve loan
+export const cfoApproveLoan = createAsyncThunk(
+  'payroll/cfoApprove',
+  async ({ id, comment }: { id: number; comment: string }, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.put(`/api/loan/${id}/cfo-approve`, { comment });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to approve loan'
+      );
+    }
+  }
+);
+
+// Reject loan
+export const rejectLoan = createAsyncThunk(
+  'payroll/rejectLoan',
+  async ({ id, reason }: { id: number; reason: string }, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.put(`/api/loan/${id}/reject`, { reason });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to reject loan'
+      );
+    }
+  }
+);
+// Fetch loans by employee ID (Admin)
+export const fetchLoansByEmployee = createAsyncThunk(
+  'payroll/fetchLoansByEmployee',
+  async (employeeId: number, { rejectWithValue }) => {
+    try {
+      const response = await payrollApi.get(`/api/loan/employee/${employeeId}`);
+      return response.data as Loan[];
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch employee loans'
+      );
+    }
+  }
+);
 
 // Settle loan (Admin)
 export const settleLoan = createAsyncThunk(
@@ -199,10 +332,16 @@ const payrollSlice = createSlice({
         state.loans = action.payload;
       })
 
+      // Fetch Loan by Employee
+      .addCase(fetchLoansByEmployee.fulfilled, (state, action) => {
+        state.loans = action.payload;
+      })
+
       // Fetch all loans
       .addCase(fetchAllLoans.fulfilled, (state, action) => {
         state.loans = action.payload;
       });
+
   },
 });
 
