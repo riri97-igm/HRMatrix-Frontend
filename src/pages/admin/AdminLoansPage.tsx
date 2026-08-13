@@ -14,6 +14,7 @@ import {
 } from '../../store/slices/payrollSlice';
 import { Landmark, CheckCircle, XCircle, Search, Clock, Download } from 'lucide-react';
 import { exportLoansExcel } from '../../utils/exportExcel';
+import { logAction } from '../../utils/auditLog';
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -65,12 +66,18 @@ const AdminLoansPage = () => {
     await dispatch(hrApproveLoan({ id, comment: comment[id] || '' }));
     setMsg('Loan HR approved! Forwarded to CFO.');
     dispatch(fetchPendingHRLoans());
+    await logAction('Approved', 'Loan', String(id),
+      `Loan #${id} HR approved${comment[id] ? ` — ${comment[id]}` : ''}`
+    );
   };
 
   const handleCFOApprove = async (id: number) => {
     await dispatch(cfoApproveLoan({ id, comment: comment[id] || '' }));
     setMsg('Loan fully approved by CFO! Loan is now active.');
     dispatch(fetchPendingCFOLoans());
+    await logAction('Approved', 'Loan', String(id),
+      `Loan #${id} CFO final approved — loan is now active`
+    );
   };
 
   const handleReject = async (id: number) => {
@@ -80,6 +87,9 @@ const AdminLoansPage = () => {
     }
     await dispatch(rejectLoan({ id, reason: comment[id] }));
     setMsg('Loan rejected.');
+    await logAction('Rejected', 'Loan', String(id),
+      `Loan #${id} rejected — ${comment[id]}`
+    );
     if (activeTab === 'all') dispatch(fetchAllLoans());
     else if (activeTab === 'pending-manager') dispatch(fetchPendingManagerLoans());
     else if (activeTab === 'pending-hr') dispatch(fetchPendingHRLoans());
@@ -89,6 +99,9 @@ const AdminLoansPage = () => {
   const handleSettle = async (id: number) => {
     if (window.confirm('Mark this loan as settled?')) {
       await dispatch(settleLoan(id));
+      await logAction('Settled', 'Loan', String(id),
+        `Loan #${id} marked as settled`
+      );
       setMsg('Loan settled successfully!');
       dispatch(fetchAllLoans());
     }
@@ -114,8 +127,8 @@ const AdminLoansPage = () => {
 
       {msg && (
         <div className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${msg.includes('rejected') || msg.includes('Please')
-            ? 'bg-red-50 text-red-700'
-            : 'bg-green-50 text-green-700'
+          ? 'bg-red-50 text-red-700'
+          : 'bg-green-50 text-green-700'
           }`}>
           {msg}
         </div>
@@ -149,8 +162,8 @@ const AdminLoansPage = () => {
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeTab === tab.key
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-gray-500 hover:bg-gray-50'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-white text-gray-500 hover:bg-gray-50'
               }`}
           >
             {tab.label}
@@ -377,10 +390,10 @@ const ApprovalStep = ({
 }) => (
   <div className="flex flex-col items-center">
     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${approved
-        ? 'bg-green-100 text-green-700'
-        : rejected
-          ? 'bg-red-100 text-red-700'
-          : 'bg-gray-100 text-gray-400'
+      ? 'bg-green-100 text-green-700'
+      : rejected
+        ? 'bg-red-100 text-red-700'
+        : 'bg-gray-100 text-gray-400'
       }`}>
       {approved ? '✓' : rejected ? '✗' : label[0]}
     </div>

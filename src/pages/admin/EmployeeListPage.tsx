@@ -9,6 +9,7 @@ import {
 import { Users, Plus, Search, Trash2, X, Pencil, Download, Eye, EyeOff } from 'lucide-react';
 import { identityApi, employeeApi } from '../../services/api';
 import { exportEmployeesExcel } from '../../utils/exportExcel';
+import { logAction } from '../../utils/auditLog';
 
 const EmployeeListPage = () => {
   const dispatch = useAppDispatch();
@@ -119,6 +120,9 @@ const EmployeeListPage = () => {
         fullName: '', phone: '', position: '',
         departmentId: '', managerId: '', baseSalary: '', joinDate: '',
       });
+      await logAction('Created', 'Employee', String(employeeId),
+        `Created employee: ${form.fullName} (${form.position}) in ${form.departmentId}`
+      );
       dispatch(fetchEmployees());
     } catch (error: any) {
       setMsg(error.response?.data?.message || 'Failed to create employee.');
@@ -149,6 +153,9 @@ const EmployeeListPage = () => {
         managerId: editForm.managerId ? parseInt(editForm.managerId) : null,
         baseSalary: parseFloat(editForm.baseSalary),
       });
+      await logAction('Updated', 'Employee', String(editForm.id),
+        `Updated employee profile — Position: ${editForm.position}`
+      );
       setMsg('Employee updated successfully!');
       setShowEditForm(false);
       dispatch(fetchEmployees());
@@ -173,6 +180,9 @@ const EmployeeListPage = () => {
           remarks: deactivateForm.remarks,
         },
       });
+      await logAction('Deleted', 'Employee', String(deactivateId),
+        `Employee deactivated: ${deactivateForm.status} — ${deactivateForm.remarks || 'No remarks'}`
+      );
       setMsg(`Employee ${deactivateForm.status.toLowerCase()} successfully!`);
       setShowDeactivateForm(false);
       setDeactivateId(null);

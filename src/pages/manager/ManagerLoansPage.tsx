@@ -8,6 +8,7 @@ import {
     rejectLoan,
 } from '../../store/slices/payrollSlice';
 import { Landmark, CheckCircle, XCircle } from 'lucide-react';
+import { logAction } from '../../utils/auditLog';
 
 const loanTypeLabels: Record<string, string> = {
     Personal: 'Personal Loan',
@@ -32,6 +33,9 @@ const ManagerLoansPage = () => {
         await dispatch(managerApproveLoan({ id, comment: comment[id] || '' }));
         setMsg('Loan approved! Forwarded to HR for review.');
         dispatch(fetchPendingManagerLoans());
+        await logAction('Approved', 'Loan', String(id),
+            `Loan #${id} Manager approved${comment[id] ? ` — ${comment[id]}` : ''}`
+        );
     };
 
     const handleReject = async (id: number) => {
@@ -42,6 +46,9 @@ const ManagerLoansPage = () => {
         await dispatch(rejectLoan({ id, reason: comment[id] }));
         setMsg('Loan rejected.');
         dispatch(fetchPendingManagerLoans());
+        await logAction('Rejected', 'Loan', String(id),
+            `Loan #${id} rejected by Manager — ${comment[id]}`
+        );
     };
 
     return (
@@ -65,8 +72,8 @@ const ManagerLoansPage = () => {
 
             {msg && (
                 <div className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${msg.includes('rejected') || msg.includes('Please')
-                        ? 'bg-red-50 text-red-700'
-                        : 'bg-green-50 text-green-700'
+                    ? 'bg-red-50 text-red-700'
+                    : 'bg-green-50 text-green-700'
                     }`}>
                     {msg}
                 </div>
@@ -201,10 +208,10 @@ const ApprovalStep = ({
 }) => (
     <div className="flex flex-col items-center">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${approved
-                ? 'bg-green-100 text-green-700'
-                : current
-                    ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-400'
-                    : 'bg-gray-100 text-gray-400'
+            ? 'bg-green-100 text-green-700'
+            : current
+                ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-400'
+                : 'bg-gray-100 text-gray-400'
             }`}>
             {approved ? '✓' : label[0]}
         </div>

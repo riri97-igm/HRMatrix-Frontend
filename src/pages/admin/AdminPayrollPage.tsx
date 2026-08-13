@@ -12,6 +12,7 @@ import { formatCurrency } from '../../utils/currency';
 import { exportPayslipPDF, exportPayslipListPDF } from '../../utils/exportPdf';
 import { leaveApi, payrollApi } from '../../services/api';
 import { exportPayslipsExcel } from '../../utils/exportExcel';
+import { logAction } from '../../utils/auditLog';
 
 const months = [
   'January', 'February', 'March', 'April',
@@ -269,6 +270,9 @@ const AdminPayrollPage = () => {
           yearEndBonus: '', thirteenthMonth: '', otherDeduction: '',
           employeeAge: '', notes: '',
         });
+        await logAction('Generated', 'Payroll', String(result.payload),
+          `Payslip generated for ${form.employeeName} — ${months[form.month - 1]} ${form.year} (${form.country})`
+        );
         setLoanDeduction(0);
         setUnpaidLeaveDays(0);
         setUnpaidLeaveDeduction(0);

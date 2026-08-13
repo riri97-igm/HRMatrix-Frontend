@@ -4,7 +4,8 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchMyLoans, applyLoan } from '../../store/slices/payrollSlice';
 import { fetchMyProfile } from '../../store/slices/employeeSlice';
-import { Landmark, Plus, X, CheckCircle } from 'lucide-react';
+import { Landmark, Plus, X, } from 'lucide-react';
+import { logAction } from '../../utils/auditLog';
 
 const loanTypes = [
   'Personal',
@@ -132,6 +133,9 @@ const EmployeeLoansPage = () => {
         requestedAmount: amount,
         purpose: form.purpose,
       })
+    );
+    await logAction('Applied', 'Loan', String(result.payload),
+      `Loan application submitted: ${loanTypeLabels[form.loanType]} — ${parseFloat(loanAmount).toLocaleString()}`
     );
 
     if (applyLoan.fulfilled.match(result)) {

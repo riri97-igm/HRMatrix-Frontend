@@ -1,8 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AuthUser } from '../../types';
-import { identityApi } from '../../services/api';
-
+import { identityApi, employeeApi } from '../../services/api';
 
 interface AuthState {
   user: AuthUser | null;
@@ -22,7 +21,19 @@ export const loginAsync = createAsyncThunk(
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await identityApi.post('/api/auth/login', credentials);
-      return response.data as AuthUser;
+      const data = response.data as AuthUser;
+
+      // Log login action
+      try {
+        await employeeApi.post('/api/auditlog', {
+          action: 'Login',
+          entityType: 'User',
+          entityId: String(data.userId),
+          description: `User logged in: ${data.email} (${data.role})`,
+        });
+      } catch { /* silent */ }
+
+      return data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
     }

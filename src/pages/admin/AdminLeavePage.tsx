@@ -4,6 +4,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchAllLeaves, reviewLeave } from '../../store/slices/leaveSlice';
 import { ClipboardList, CheckCircle, XCircle, Search } from 'lucide-react';
+import { logAction } from '../../utils/auditLog';
 
 const AdminLeavePage = () => {
   const dispatch = useAppDispatch();
@@ -23,6 +24,12 @@ const AdminLeavePage = () => {
   const handleReview = async (id: number, isApproved: boolean) => {
     await dispatch(reviewLeave({ id, isApproved, comment: comment[id] }));
     dispatch(fetchAllLeaves());
+    await logAction(
+      isApproved ? 'Approved' : 'Rejected',
+      'Leave',
+      String(id),
+      `Leave request ${isApproved ? 'approved' : 'rejected'}${comment[id] ? ` — ${comment[id]}` : ''}`
+    );
   };
 
   const filtered = leaves.filter((l) => {

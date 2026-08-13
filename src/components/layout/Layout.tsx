@@ -23,14 +23,14 @@ const adminNav: NavItem[] = [
   { label: 'Employees', path: '/admin/employees', icon: <Users size={18} /> },
   { label: 'Departments', path: '/admin/departments', icon: <Building2 size={18} /> },
   { label: 'Leave Requests', path: '/admin/leaves', icon: <ClipboardList size={18} /> },
+  { label: 'Leave Balance', path: '/admin/leave-balance', icon: <CalendarDays size={18} /> },
   { label: 'Payroll', path: '/admin/payroll', icon: <DollarSign size={18} /> },
   { label: 'Bulk Payroll', path: '/admin/bulk-payroll', icon: <Layers size={18} /> },
   { label: 'Loans', path: '/admin/loans', icon: <Landmark size={18} /> },
-  { label: 'Leave Balance', path: '/admin/leave-balance', icon: <CalendarDays size={18} /> },
   { label: 'Reports', path: '/admin/reports', icon: <BarChart2 size={18} /> },
+  { label: 'Audit Log', path: '/admin/audit-log', icon: <Shield size={18} /> },
   { label: 'My Profile', path: '/admin/profile', icon: <User size={18} /> },
   { label: 'Country Policies', path: '/admin/countries', icon: <Globe size={18} /> },
-  { label: 'Audit Log', path: '/admin/audit-log', icon: <Shield size={18} /> },
 ];
 
 const managerNav: NavItem[] = [

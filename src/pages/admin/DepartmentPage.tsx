@@ -5,6 +5,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchDepartments } from '../../store/slices/employeeSlice';
 import { employeeApi } from '../../services/api';
 import { Building2, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { logAction } from '../../utils/auditLog';
 
 const DepartmentPage = () => {
     const dispatch = useAppDispatch();
@@ -34,6 +35,9 @@ const DepartmentPage = () => {
             setMsg(error.response?.data?.message || 'Failed to create department.');
             setIsError(true);
         }
+        await logAction('Created', 'Department', String(name),
+            `Department created: ${name}`
+        );
     };
 
     const handleEdit = (id: number, currentName: string) => {
@@ -57,6 +61,9 @@ const DepartmentPage = () => {
             setMsg(error.response?.data?.message || 'Failed to update department.');
             setIsError(true);
         }
+        await logAction('Updated', 'Department', String(editId),
+            `Department renamed to: ${name}`
+        );
     };
 
     const handleDelete = async (id: number, deptName: string) => {
@@ -70,6 +77,9 @@ const DepartmentPage = () => {
             setMsg(error.response?.data?.message || 'Failed to delete department.');
             setIsError(true);
         }
+        await logAction('Deleted', 'Department', String(id),
+            `Department deleted: ${deptName}`
+        );
     };
 
     return (
