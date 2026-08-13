@@ -5,16 +5,15 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import {
   fetchAllLoans,
   fetchPendingHRLoans,
+  fetchPendingManagerLoans,
   fetchPendingCFOLoans,
   hrApproveLoan,
   cfoApproveLoan,
   rejectLoan,
   settleLoan,
 } from '../../store/slices/payrollSlice';
-import { Landmark, CheckCircle, XCircle, Search } from 'lucide-react';
-import type { Loan } from '../../types';
+import { Landmark, CheckCircle, XCircle, Search, Clock, Download } from 'lucide-react';
 import { exportLoansExcel } from '../../utils/exportExcel';
-import { Download } from 'lucide-react';
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -30,8 +29,12 @@ const statusColor = (status: string) => {
 
 const statusLabel = (status: string) => {
   switch (status) {
-    case 'HRApproved': return 'HR Approved';
+    case 'Pending': return 'Pending Manager';
     case 'ManagerApproved': return 'Manager Approved';
+    case 'HRApproved': return 'HR Approved';
+    case 'Approved': return 'Approved';
+    case 'Rejected': return 'Rejected';
+    case 'Settled': return 'Settled';
     default: return status;
   }
 };
@@ -39,13 +42,14 @@ const statusLabel = (status: string) => {
 const AdminLoansPage = () => {
   const dispatch = useAppDispatch();
   const { loans, loading } = useAppSelector((state) => state.payroll);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending-hr' | 'pending-cfo'>('pending-hr');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending-manager' | 'pending-hr' | 'pending-cfo'>('pending-manager');
   const [search, setSearch] = useState('');
   const [comment, setComment] = useState<Record<number, string>>({});
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
     if (activeTab === 'all') dispatch(fetchAllLoans());
+    else if (activeTab === 'pending-manager') dispatch(fetchPendingManagerLoans());
     else if (activeTab === 'pending-hr') dispatch(fetchPendingHRLoans());
     else if (activeTab === 'pending-cfo') dispatch(fetchPendingCFOLoans());
   }, [dispatch, activeTab]);
@@ -59,13 +63,13 @@ const AdminLoansPage = () => {
 
   const handleHRApprove = async (id: number) => {
     await dispatch(hrApproveLoan({ id, comment: comment[id] || '' }));
-    setMsg('Loan HR approved successfully!');
+    setMsg('Loan HR approved! Forwarded to CFO.');
     dispatch(fetchPendingHRLoans());
   };
 
   const handleCFOApprove = async (id: number) => {
     await dispatch(cfoApproveLoan({ id, comment: comment[id] || '' }));
-    setMsg('Loan fully approved by CFO!');
+    setMsg('Loan fully approved by CFO! Loan is now active.');
     dispatch(fetchPendingCFOLoans());
   };
 
@@ -77,6 +81,7 @@ const AdminLoansPage = () => {
     await dispatch(rejectLoan({ id, reason: comment[id] }));
     setMsg('Loan rejected.');
     if (activeTab === 'all') dispatch(fetchAllLoans());
+    else if (activeTab === 'pending-manager') dispatch(fetchPendingManagerLoans());
     else if (activeTab === 'pending-hr') dispatch(fetchPendingHRLoans());
     else dispatch(fetchPendingCFOLoans());
   };
@@ -91,37 +96,61 @@ const AdminLoansPage = () => {
 
   return (
     <Layout>
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Loan Management</h2>
-          <p className="text-gray-500 text-sm">
-            Review and approve employee loan requests
-          </p>
+          <p className="text-gray-500 text-sm">Review and approve employee loan requests</p>
         </div>
+        <button
+          onClick={() => exportLoansExcel(filtered)}
+          disabled={filtered.length === 0}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+        >
+          <Download size={16} />
+          Export Excel
+        </button>
       </div>
 
       {msg && (
         <div className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${msg.includes('rejected') || msg.includes('Please')
-          ? 'bg-red-50 text-red-700'
-          : 'bg-green-50 text-green-700'
+            ? 'bg-red-50 text-red-700'
+            : 'bg-green-50 text-green-700'
           }`}>
           {msg}
         </div>
       )}
 
+      {/* Approval Flow Info */}
+      <div className="bg-indigo-50 rounded-2xl p-4 mb-4 text-sm text-indigo-700">
+        <p className="font-semibold mb-1">📋 Loan Approval Flow</p>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">1️⃣ Employee Applies</span>
+          <span>→</span>
+          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">2️⃣ Manager Reviews</span>
+          <span>→</span>
+          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">3️⃣ HR Reviews</span>
+          <span>→</span>
+          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">4️⃣ CFO Approves</span>
+          <span>→</span>
+          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">✅ Active</span>
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {[
-          { key: 'pending-hr', label: 'Pending HR Review' },
-          { key: 'pending-cfo', label: 'Pending CFO Approval' },
+          { key: 'pending-manager', label: '1️⃣ Pending Manager' },
+          { key: 'pending-hr', label: '2️⃣ Pending HR Review' },
+          { key: 'pending-cfo', label: '3️⃣ Pending CFO Approval' },
           { key: 'all', label: 'All Loans' },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeTab === tab.key
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white text-gray-500 hover:bg-gray-50'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-white text-gray-500 hover:bg-gray-50'
               }`}
           >
             {tab.label}
@@ -155,6 +184,7 @@ const AdminLoansPage = () => {
         ) : (
           filtered.map((loan) => (
             <div key={loan.id} className="bg-white rounded-2xl shadow-sm p-5">
+
               {/* Loan Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -178,89 +208,83 @@ const AdminLoansPage = () => {
                 </div>
               </div>
 
-              {/* Download Excel */}
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Loan Management</h2>
-                  <p className="text-gray-500 text-sm">Review and approve employee loan requests</p>
-                </div>
-                <button
-                  onClick={() => exportLoansExcel(filtered)}
-                  disabled={filtered.length === 0}
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
-                >
-                  <Download size={16} />
-                  Export Excel
-                </button>
-              </div>
-
               {/* Loan Details */}
               <div className="grid grid-cols-4 gap-4 mb-4 bg-gray-50 rounded-xl p-3">
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Requested Amount</p>
-                  <p className="font-semibold text-gray-700">
-                    {loan.requestedAmount.toLocaleString()}
-                  </p>
+                  <p className="font-semibold text-gray-700">{loan.requestedAmount.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Monthly Deduction</p>
-                  <p className="font-semibold text-gray-700">
-                    {loan.monthlyDeduction.toLocaleString()}
-                  </p>
+                  <p className="font-semibold text-gray-700">{loan.monthlyDeduction.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Repayment</p>
-                  <p className="font-semibold text-gray-700">
-                    {loan.repaymentMonths} months
-                  </p>
+                  <p className="font-semibold text-gray-700">{loan.repaymentMonths} months</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Remaining</p>
-                  <p className="font-semibold text-red-500">
-                    {loan.remainingBalance.toLocaleString()}
-                  </p>
+                  <p className="font-semibold text-red-500">{loan.remainingBalance.toLocaleString()}</p>
                 </div>
               </div>
 
               {/* Purpose */}
-              <p className="text-sm text-gray-600 mb-3 italic">
+              <p className="text-sm text-gray-600 mb-4 italic">
                 Purpose: "{loan.purpose}"
               </p>
 
-              {/* Approval Timeline */}
+              {/* Approval Timeline — Manager → HR → CFO */}
               <div className="flex items-center gap-2 mb-4">
-                <ApprovalStep
-                  label="HR"
-                  approved={!!loan.hrApprovedAt}
-                  approverName={loan.hrApprovedByName}
-                  approvedAt={loan.hrApprovedAt}
-                  rejected={loan.status === 'Rejected' && !loan.hrApprovedAt}
-                />
-                <div className="flex-1 h-px bg-gray-200" />
                 <ApprovalStep
                   label="Manager"
                   approved={!!loan.managerApprovedAt}
                   approverName={loan.managerApprovedByName}
-                  approvedAt={loan.managerApprovedAt}
-                  rejected={loan.status === 'Rejected' && !!loan.hrApprovedAt && !loan.managerApprovedAt}
+                  rejected={loan.status === 'Rejected' && !loan.managerApprovedAt}
+                />
+                <div className="flex-1 h-px bg-gray-200" />
+                <ApprovalStep
+                  label="HR"
+                  approved={!!loan.hrApprovedAt}
+                  approverName={loan.hrApprovedByName}
+                  rejected={loan.status === 'Rejected' && !!loan.managerApprovedAt && !loan.hrApprovedAt}
                 />
                 <div className="flex-1 h-px bg-gray-200" />
                 <ApprovalStep
                   label="CFO"
                   approved={!!loan.cfoApprovedAt}
                   approverName={loan.cfoApprovedByName}
-                  approvedAt={loan.cfoApprovedAt}
-                  rejected={loan.status === 'Rejected' && !!loan.managerApprovedAt}
+                  rejected={loan.status === 'Rejected' && !!loan.hrApprovedAt && !loan.cfoApprovedAt}
                 />
               </div>
 
+              {/* Comments shown if approved */}
+              {loan.managerComment && (
+                <p className="text-xs text-gray-400 mb-1">Manager: "{loan.managerComment}"</p>
+              )}
+              {loan.hrComment && (
+                <p className="text-xs text-gray-400 mb-1">HR: "{loan.hrComment}"</p>
+              )}
+              {loan.cfoComment && (
+                <p className="text-xs text-gray-400 mb-1">CFO: "{loan.cfoComment}"</p>
+              )}
+
               {/* Actions */}
               <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+
+                {/* Step 1 — Waiting Manager */}
                 {loan.status === 'Pending' && (
+                  <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg w-full">
+                    <Clock size={14} />
+                    Waiting for Department Manager to review first
+                  </div>
+                )}
+
+                {/* Step 2 — HR Approve (after Manager) */}
+                {loan.status === 'ManagerApproved' && (
                   <>
                     <input
                       type="text"
-                      placeholder="Comment (optional)"
+                      placeholder="HR Comment (optional)"
                       value={comment[loan.id] || ''}
                       onChange={(e) => setComment({ ...comment, [loan.id]: e.target.value })}
                       className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -282,11 +306,12 @@ const AdminLoansPage = () => {
                   </>
                 )}
 
-                {loan.status === 'ManagerApproved' && (
+                {/* Step 3 — CFO Approve (after HR) */}
+                {loan.status === 'HRApproved' && (
                   <>
                     <input
                       type="text"
-                      placeholder="CFO comment (optional)"
+                      placeholder="CFO Comment (optional)"
                       value={comment[loan.id] || ''}
                       onChange={(e) => setComment({ ...comment, [loan.id]: e.target.value })}
                       className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -308,6 +333,7 @@ const AdminLoansPage = () => {
                   </>
                 )}
 
+                {/* Settle */}
                 {loan.status === 'Approved' && !loan.isSettled && (
                   <button
                     onClick={() => handleSettle(loan.id)}
@@ -320,7 +346,7 @@ const AdminLoansPage = () => {
 
                 {loan.status === 'Rejected' && (
                   <p className="text-sm text-red-500">
-                    Rejected: {loan.rejectionReason}
+                    ❌ Rejected: {loan.rejectionReason}
                   </p>
                 )}
 
@@ -342,27 +368,25 @@ const ApprovalStep = ({
   label,
   approved,
   approverName,
-  approvedAt,
   rejected,
 }: {
   label: string;
   approved: boolean;
   approverName?: string;
-  approvedAt?: string;
   rejected?: boolean;
 }) => (
   <div className="flex flex-col items-center">
     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${approved
-      ? 'bg-green-100 text-green-700'
-      : rejected
-        ? 'bg-red-100 text-red-700'
-        : 'bg-gray-100 text-gray-400'
+        ? 'bg-green-100 text-green-700'
+        : rejected
+          ? 'bg-red-100 text-red-700'
+          : 'bg-gray-100 text-gray-400'
       }`}>
       {approved ? '✓' : rejected ? '✗' : label[0]}
     </div>
     <p className="text-xs text-gray-500 mt-1">{label}</p>
     {approved && approverName && (
-      <p className="text-xs text-green-600">{approverName}</p>
+      <p className="text-xs text-green-600 text-center max-w-16 truncate">{approverName}</p>
     )}
   </div>
 );

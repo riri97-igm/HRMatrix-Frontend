@@ -3,84 +3,61 @@ import Layout from '../../components/layout/Layout';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchEmployees } from '../../store/slices/employeeSlice';
-import { fetchAllLeaves } from '../../store/slices/leaveSlice';
-import { fetchAllPayslips } from '../../store/slices/payrollSlice';
-import { Search } from 'lucide-react';
+import { fetchAllLeaves, reviewLeave } from '../../store/slices/leaveSlice';
+import { fetchAllPayslips, fetchAllLoans } from '../../store/slices/payrollSlice';
+import { useNavigate } from 'react-router-dom';
+import {
+  CheckCircle, XCircle, Clock, Users,
+  ClipboardList, DollarSign, Landmark, AlertCircle
+} from 'lucide-react';
 
 const AdminDashboard = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
   const { employees } = useAppSelector((state) => state.employee);
   const { leaves } = useAppSelector((state) => state.leave);
-  const { payslips } = useAppSelector((state) => state.payroll);
+  const { payslips, loans } = useAppSelector((state) => state.payroll);
+  const [comment, setComment] = useState<Record<number, string>>({});
+  const [msg, setMsg] = useState('');
 
-  // Leave filters
-  const [leaveSearch, setLeaveSearch] = useState('');
-  const [leaveStatusFilter, setLeaveStatusFilter] = useState('');
-  const [leaveDateFrom, setLeaveDateFrom] = useState('');
-  const [leaveDateTo, setLeaveDateTo] = useState('');
-  const [leavePage, setLeavePage] = useState(1);
-  const leavePerPage = 5;
-
-  // Employee filters
-  const [empSearch, setEmpSearch] = useState('');
-  const [empDeptFilter, setEmpDeptFilter] = useState('');
-  const [empPage, setEmpPage] = useState(1);
-  const empPerPage = 5;
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     dispatch(fetchEmployees());
     dispatch(fetchAllLeaves());
     dispatch(fetchAllPayslips({}));
+    dispatch(fetchAllLoans());
   }, [dispatch]);
 
-  const pendingLeaves = leaves.filter((l) => l.status === 'Pending').length;
-  const approvedLeaves = leaves.filter((l) => l.status === 'Approved').length;
-
-  // ── Leave Filters ─────────────────────────────────────
-  const filteredLeaves = leaves.filter((l) => {
-    const matchSearch =
-      l.employeeName.toLowerCase().includes(leaveSearch.toLowerCase()) ||
-      l.leaveType.toLowerCase().includes(leaveSearch.toLowerCase());
-
-    const matchStatus = leaveStatusFilter === '' || l.status === leaveStatusFilter;
-
-    const matchDateFrom =
-      leaveDateFrom === '' ||
-      new Date(l.startDate) >= new Date(leaveDateFrom);
-
-    const matchDateTo =
-      leaveDateTo === '' ||
-      new Date(l.endDate) <= new Date(leaveDateTo);
-
-    return matchSearch && matchStatus && matchDateFrom && matchDateTo;
-  });
-
-  const totalLeavePages = Math.ceil(filteredLeaves.length / leavePerPage);
-  const paginatedLeaves = filteredLeaves.slice(
-    (leavePage - 1) * leavePerPage,
-    leavePage * leavePerPage
+  // Stats
+  const activeEmployees = employees.filter((e) => e.isActive).length;
+  const pendingLeaves = leaves.filter((l) => l.status === 'Pending');
+  const pendingLoans = loans.filter((l) =>
+    ['Pending', 'ManagerApproved', 'HRApproved'].includes(l.status)
   );
+  const payslipsThisMonth = payslips.filter(
+    (p) => p.month === currentMonth + 1 && p.year === currentYear
+  ).length;
+  const newEmployeesThisMonth = employees.filter((e) => {
+    const d = new Date(e.joinDate);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).length;
 
-  // ── Employee Filters ──────────────────────────────────
-  const departments = [...new Set(employees.map((e) => e.departmentName))];
+  // Quick Approve Leave
+  const handleQuickApprove = async (id: number, approved: boolean) => {
+    await dispatch(reviewLeave({ id, isApproved: approved, comment: comment[id] || '' }));
+    setMsg(approved ? 'Leave approved!' : 'Leave rejected!');
+    dispatch(fetchAllLeaves());
+  };
 
-  const filteredEmployees = employees.filter((e) => {
-    const matchSearch =
-      e.fullName.toLowerCase().includes(empSearch.toLowerCase()) ||
-      e.position.toLowerCase().includes(empSearch.toLowerCase());
-
-    const matchDept =
-      empDeptFilter === '' || e.departmentName === empDeptFilter;
-
-    return matchSearch && matchDept;
+  // Work Anniversaries This Month
+  const anniversaries = employees.filter((e) => {
+    if (!e.isActive) return false;
+    const join = new Date(e.joinDate);
+    return join.getMonth() === currentMonth && join.getDate() >= new Date().getDate();
   });
-
-  const totalEmpPages = Math.ceil(filteredEmployees.length / empPerPage);
-  const paginatedEmployees = filteredEmployees.slice(
-    (empPage - 1) * empPerPage,
-    empPage * empPerPage
-  );
 
   return (
     <Layout>
@@ -90,318 +67,318 @@ const AdminDashboard = () => {
           Welcome back, {user?.fullName}! 👋
         </h2>
         <p className="text-gray-500 text-sm">
-          Here's what's happening in HRMatrix today.
+          {new Date().toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+          })}
         </p>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard icon="👥" label="Total Employees" value={employees.length} color="bg-indigo-500" />
-        <StatCard icon="⏳" label="Pending Leaves" value={pendingLeaves} color="bg-yellow-500" />
-        <StatCard icon="✅" label="Approved Leaves" value={approvedLeaves} color="bg-green-500" />
-        <StatCard icon="💰" label="Total Payslips" value={payslips.length} color="bg-blue-500" />
+      {msg && (
+        <div className="px-4 py-3 rounded-lg mb-4 text-sm font-medium bg-green-50 text-green-700">
+          {msg}
+        </div>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <QuickStat
+          icon={<Users size={20} className="text-white" />}
+          label="Active Employees"
+          value={activeEmployees}
+          hint="Total headcount"
+          color="bg-indigo-500"
+          onClick={() => navigate('/admin/employees')}
+        />
+        <QuickStat
+          icon={<ClipboardList size={20} className="text-white" />}
+          label="Pending Leaves"
+          value={pendingLeaves.length}
+          hint="Need your approval"
+          color={pendingLeaves.length > 0 ? 'bg-yellow-500' : 'bg-green-500'}
+          onClick={() => navigate('/admin/leaves')}
+        />
+        <QuickStat
+          icon={<Landmark size={20} className="text-white" />}
+          label="Pending Loans"
+          value={pendingLoans.length}
+          hint="In approval process"
+          color={pendingLoans.length > 0 ? 'bg-orange-500' : 'bg-green-500'}
+          onClick={() => navigate('/admin/loans')}
+        />
+        <QuickStat
+          icon={<DollarSign size={20} className="text-white" />}
+          label="Payslips This Month"
+          value={payslipsThisMonth}
+          hint={`${new Date().toLocaleString('default', { month: 'long' })} ${currentYear}`}
+          color="bg-blue-500"
+          onClick={() => navigate('/admin/payroll')}
+        />
       </div>
 
-      {/* Leave Requests Section */}
-      <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Leave Requests
-        </h3>
-
-        {/* Leave Filters */}
-        <div className="flex gap-3 flex-wrap mb-4">
-          <div className="relative flex-1 min-w-40">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search employee or type..."
-              value={leaveSearch}
-              onChange={(e) => { setLeaveSearch(e.target.value); setLeavePage(1); }}
-              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-          </div>
-          <select
-            value={leaveStatusFilter}
-            onChange={(e) => { setLeaveStatusFilter(e.target.value); setLeavePage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={leaveDateFrom}
-              onChange={(e) => { setLeaveDateFrom(e.target.value); setLeavePage(1); }}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-            <span className="text-gray-400 text-sm">to</span>
-            <input
-              type="date"
-              value={leaveDateTo}
-              onChange={(e) => { setLeaveDateTo(e.target.value); setLeavePage(1); }}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-          </div>
-          {(leaveSearch || leaveStatusFilter || leaveDateFrom || leaveDateTo) && (
-            <button
-              onClick={() => {
-                setLeaveSearch('');
-                setLeaveStatusFilter('');
-                setLeaveDateFrom('');
-                setLeaveDateTo('');
-                setLeavePage(1);
-              }}
-              className="text-xs text-red-500 hover:text-red-700 font-medium"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Leave Table */}
-        {filteredLeaves.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-4">
-            No leave requests found.
-          </p>
-        ) : (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50">
-                  {['Employee', 'Type', 'From', 'To', 'Days', 'Status'].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-gray-500 font-semibold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedLeaves.map((l) => (
-                  <tr key={l.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-800">{l.employeeName}</td>
-                    <td className="px-4 py-3 text-gray-600">{l.leaveType}</td>
-                    <td className="px-4 py-3 text-gray-600">{l.startDate.split('T')[0]}</td>
-                    <td className="px-4 py-3 text-gray-600">{l.endDate.split('T')[0]}</td>
-                    <td className="px-4 py-3 text-gray-600">{l.totalDays}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${l.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                        l.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                        {l.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Leave Pagination */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400">
-                Showing {((leavePage - 1) * leavePerPage) + 1} to{' '}
-                {Math.min(leavePage * leavePerPage, filteredLeaves.length)} of{' '}
-                {filteredLeaves.length} requests
-              </p>
-              {totalLeavePages > 1 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setLeavePage((p) => Math.max(1, p - 1))}
-                    disabled={leavePage === 1}
-                    className="px-3 py-1 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: totalLeavePages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setLeavePage(page)}
-                      className={`w-7 h-7 rounded-lg text-xs font-medium transition ${leavePage === page
-                        ? 'bg-indigo-600 text-white'
-                        : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setLeavePage((p) => Math.min(totalLeavePages, p + 1))}
-                    disabled={leavePage === totalLeavePages}
-                    className="px-3 py-1 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Left — Pending Leave Approvals */}
+        <div className="col-span-2 space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Pending Leave Requests
+              </h3>
+              <button
+                onClick={() => navigate('/admin/leaves')}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                View All →
+              </button>
             </div>
-          </>
-        )}
-      </div>
 
-      {/* Recent Employees Section */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Employees
-        </h3>
-
-        {/* Employee Filters */}
-        <div className="flex gap-3 flex-wrap mb-4">
-          <div className="relative flex-1 min-w-40">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name or position..."
-              value={empSearch}
-              onChange={(e) => { setEmpSearch(e.target.value); setEmpPage(1); }}
-              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-          </div>
-          <select
-            value={empDeptFilter}
-            onChange={(e) => { setEmpDeptFilter(e.target.value); setEmpPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="">All Departments</option>
-            {departments.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-          {(empSearch || empDeptFilter) && (
-            <button
-              onClick={() => {
-                setEmpSearch('');
-                setEmpDeptFilter('');
-                setEmpPage(1);
-              }}
-              className="text-xs text-red-500 hover:text-red-700 font-medium"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Employee Table */}
-        {filteredEmployees.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-4">
-            No employees found.
-          </p>
-        ) : (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50">
-                  {['ID', 'Name', 'Position', 'Department', 'Join Date', 'Status'].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-gray-500 font-semibold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedEmployees.map((e) => (
-                  <tr key={e.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                      {String(e.id).padStart(2, '0')}
-                    </td>
-                    <td className="px-4 py-3">
+            {pendingLeaves.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle size={32} className="mx-auto text-green-400 mb-2" />
+                <p className="text-gray-400 text-sm">All caught up! No pending leave requests.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingLeaves.slice(0, 5).map((l) => (
+                  <div key={l.id} className="border border-gray-100 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs">
-                          {e.fullName.charAt(0).toUpperCase()}
+                        <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs">
+                          {l.employeeName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{e.fullName}</p>
-                          <p className="text-xs text-gray-400">{e.email}</p>
+                          <p className="font-semibold text-gray-800 text-sm">{l.employeeName}</p>
+                          <p className="text-xs text-gray-400">
+                            {l.leaveType} · {l.startDate.split('T')[0]} → {l.endDate.split('T')[0]} · {l.totalDays} day{l.totalDays > 1 ? 's' : ''}
+                          </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{e.position}</td>
-                    <td className="px-4 py-3">
-                      <span className="bg-blue-50 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
-                        {e.departmentName}
+                      <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                        Pending
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {e.joinDate.split('T')[0]}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${e.isActive
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                        }`}>
-                        {e.isActive ? 'Active' : e.status || 'Inactive'}
-                      </span>
-                    </td>
-                  </tr>
+                    </div>
+                    <p className="text-xs text-gray-500 italic mb-3">"{l.reason}"</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Comment (optional)"
+                        value={comment[l.id] || ''}
+                        onChange={(e) => setComment({ ...comment, [l.id]: e.target.value })}
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                      <button
+                        onClick={() => handleQuickApprove(l.id, true)}
+                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition"
+                      >
+                        <CheckCircle size={12} />
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleQuickApprove(l.id, false)}
+                        className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-lg transition"
+                      >
+                        <XCircle size={12} />
+                        Reject
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+                {pendingLeaves.length > 5 && (
+                  <button
+                    onClick={() => navigate('/admin/leaves')}
+                    className="w-full text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium py-2"
+                  >
+                    View {pendingLeaves.length - 5} more pending requests →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
-            {/* Employee Pagination */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400">
-                Showing {((empPage - 1) * empPerPage) + 1} to{' '}
-                {Math.min(empPage * empPerPage, filteredEmployees.length)} of{' '}
-                {filteredEmployees.length} employees
-              </p>
-              {totalEmpPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setEmpPage((p) => Math.max(1, p - 1))}
-                    disabled={empPage === 1}
-                    className="px-3 py-1 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: totalEmpPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setEmpPage(page)}
-                      className={`w-7 h-7 rounded-lg text-xs font-medium transition ${empPage === page
-                        ? 'bg-indigo-600 text-white'
-                        : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setEmpPage((p) => Math.min(totalEmpPages, p + 1))}
-                    disabled={empPage === totalEmpPages}
-                    className="px-3 py-1 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+          {/* Pending Loans Summary */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Loan Approval Queue</h3>
+              <button
+                onClick={() => navigate('/admin/loans')}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                View All →
+              </button>
             </div>
-          </>
-        )}
+
+            {pendingLoans.length === 0 ? (
+              <div className="text-center py-6">
+                <CheckCircle size={32} className="mx-auto text-green-400 mb-2" />
+                <p className="text-gray-400 text-sm">No pending loan requests.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {/* Pending stages breakdown */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    {
+                      label: 'Waiting Manager',
+                      count: loans.filter((l) => l.status === 'Pending').length,
+                      color: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                    },
+                    {
+                      label: 'Waiting HR',
+                      count: loans.filter((l) => l.status === 'ManagerApproved').length,
+                      color: 'bg-blue-50 text-blue-700 border-blue-200',
+                    },
+                    {
+                      label: 'Waiting CFO',
+                      count: loans.filter((l) => l.status === 'HRApproved').length,
+                      color: 'bg-purple-50 text-purple-700 border-purple-200',
+                    },
+                  ].map((stage) => (
+                    <div key={stage.label} className={`border rounded-xl p-3 text-center ${stage.color}`}>
+                      <p className="text-2xl font-bold">{stage.count}</p>
+                      <p className="text-xs font-medium">{stage.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recent pending loans */}
+                {pendingLoans.slice(0, 3).map((loan) => (
+                  <div key={loan.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs">
+                        {loan.employeeName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{loan.employeeName}</p>
+                        <p className="text-xs text-gray-400">{loan.loanType} · {loan.requestedAmount.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${loan.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                      loan.status === 'ManagerApproved' ? 'bg-blue-100 text-blue-700' :
+                        'bg-purple-100 text-purple-700'
+                      }`}>
+                      {loan.status === 'Pending' ? 'Waiting Manager' :
+                        loan.status === 'ManagerApproved' ? 'Waiting HR' : 'Waiting CFO'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right — Sidebar Info */}
+        <div className="space-y-4">
+          {/* New Employees This Month */}
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <h3 className="text-sm font-bold text-gray-700 mb-3">
+              🆕 New This Month
+            </h3>
+            {newEmployeesThisMonth === 0 ? (
+              <p className="text-gray-400 text-xs">No new employees this month.</p>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-indigo-600 mb-1">{newEmployeesThisMonth}</p>
+                <p className="text-xs text-gray-400">New employees joined</p>
+              </>
+            )}
+          </div>
+
+          {/* Work Anniversaries */}
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <h3 className="text-sm font-bold text-gray-700 mb-3">
+              🎂 Work Anniversaries
+            </h3>
+            {anniversaries.length === 0 ? (
+              <p className="text-gray-400 text-xs">No anniversaries this month.</p>
+            ) : (
+              <div className="space-y-2">
+                {anniversaries.slice(0, 5).map((e) => {
+                  const years = currentYear - new Date(e.joinDate).getFullYear();
+                  return (
+                    <div key={e.id} className="flex items-center gap-2">
+                      <div className="w-7 h-7 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold text-xs">
+                        {e.fullName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">{e.fullName}</p>
+                        <p className="text-xs text-gray-400">{years} year{years > 1 ? 's' : ''} 🎉</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Payroll */}
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-gray-700">💰 Payroll This Month</h3>
+              <button
+                onClick={() => navigate('/admin/payroll')}
+                className="text-xs text-indigo-600"
+              >
+                View →
+              </button>
+            </div>
+            <p className="text-2xl font-bold text-green-600">
+              {payslipsThisMonth}
+            </p>
+            <p className="text-xs text-gray-400">Payslips generated</p>
+            {payslipsThisMonth < activeEmployees && (
+              <div className="mt-2 flex items-center gap-1 text-xs text-orange-500">
+                <AlertCircle size={12} />
+                {activeEmployees - payslipsThisMonth} employees without payslip
+              </div>
+            )}
+          </div>
+
+          {/* Quick Links */}
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <h3 className="text-sm font-bold text-gray-700 mb-3">Quick Actions</h3>
+            <div className="space-y-2">
+              {[
+                { label: '+ Add Employee', path: '/admin/employees', color: 'text-indigo-600' },
+                { label: '📊 View Reports', path: '/admin/reports', color: 'text-blue-600' },
+                { label: '💳 Bulk Payroll', path: '/admin/bulk-payroll', color: 'text-green-600' },
+                { label: '🌍 Country Policies', path: '/admin/countries', color: 'text-purple-600' },
+              ].map((link) => (
+                <button
+                  key={link.path}
+                  onClick={() => navigate(link.path)}
+                  className={`w-full text-left text-sm font-medium ${link.color} hover:underline py-1`}
+                >
+                  {link.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );
 };
 
-const StatCard = ({
-  icon,
-  label,
-  value,
-  color,
+const QuickStat = ({
+  icon, label, value, hint, color, onClick,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: number;
+  hint: string;
   color: string;
+  onClick: () => void;
 }) => (
-  <div className="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4">
-    <div className={`${color} text-white text-2xl w-12 h-12 rounded-xl flex items-center justify-center`}>
+  <div
+    onClick={onClick}
+    className="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition"
+  >
+    <div className={`${color} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`}>
       {icon}
     </div>
     <div>
       <p className="text-2xl font-bold text-gray-800">{value}</p>
-      <p className="text-gray-500 text-sm">{label}</p>
+      <p className="text-gray-600 text-sm font-medium">{label}</p>
+      <p className="text-xs text-gray-400">{hint}</p>
     </div>
   </div>
 );

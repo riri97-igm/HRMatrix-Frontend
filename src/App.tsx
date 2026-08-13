@@ -17,10 +17,12 @@ import DepartmentPage from './pages/admin/DepartmentPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import LeaveBalancePage from './pages/admin/LeaveBalancePage';
 import BulkPayrollPage from './pages/admin/BulkPayrollPage';
+import AuditLogPage from './pages/admin/AuditLogPage';
 
 // Manager
 import ManagerDashboard from './pages/manager/ManagerDashboard';
 import ManagerLeavePage from './pages/manager/ManagerLeavePage';
+import ManagerTeamPage from './pages/manager/ManagerTeamPage';
 
 // Employee
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
@@ -141,6 +143,14 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/audit-log"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <AuditLogPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Manager Routes */}
         <Route
@@ -164,6 +174,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={['Manager']}>
               <ManagerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager/team"
+          element={
+            <ProtectedRoute roles={['Manager']}>
+              <ManagerTeamPage />
             </ProtectedRoute>
           }
         />

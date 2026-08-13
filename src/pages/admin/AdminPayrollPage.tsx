@@ -309,21 +309,6 @@ const AdminPayrollPage = () => {
               <Download size={16} />
               Export Excel
             </button>
-            <button
-              onClick={() => exportPayslipListPDF(filtered, `${months[filterMonth - 1]} ${filterYear}`)}
-              disabled={filtered.length === 0}
-              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
-            >
-              <Download size={16} />
-              Export PDF
-            </button>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-            >
-              <Plus size={16} />
-              Generate Payslip
-            </button>
           </div>
           <button
             onClick={() => exportPayslipListPDF(filtered, `${months[filterMonth - 1]} ${filterYear}`)}

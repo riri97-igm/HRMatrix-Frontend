@@ -38,12 +38,12 @@ const statusColor = (status: string) => {
 
 const statusLabel = (status: string) => {
   switch (status) {
-    case 'HRApproved': return '✅ HR Approved — Waiting Manager';
-    case 'ManagerApproved': return '✅ Manager Approved — Waiting CFO';
+    case 'ManagerApproved': return '✅ Manager Approved — Waiting HR';
+    case 'HRApproved': return '✅ HR Approved — Waiting CFO';
     case 'Approved': return '✅ Fully Approved — Active';
     case 'Rejected': return '❌ Rejected';
     case 'Settled': return '✅ Settled';
-    default: return '⏳ Pending HR Review';
+    default: return '⏳ Pending Manager Review';
   }
 };
 
@@ -168,8 +168,8 @@ const EmployeeLoansPage = () => {
 
       {msg && (
         <div className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${msg.includes('✅') || msg.includes('success')
-            ? 'bg-green-50 text-green-700'
-            : 'bg-red-50 text-red-700'
+          ? 'bg-green-50 text-green-700'
+          : 'bg-red-50 text-red-700'
           }`}>
           {msg}
         </div>
@@ -295,23 +295,11 @@ const EmployeeLoansPage = () => {
 
                 {/* Approval Timeline */}
                 <div className="flex items-center gap-2 mt-3">
-                  <StepBadge
-                    label="HR"
-                    done={!!loan.hrApprovedAt}
-                    name={loan.hrApprovedByName}
-                  />
+                  <StepBadge label="Manager" done={!!loan.managerApprovedAt} name={loan.managerApprovedByName} />
                   <div className="flex-1 h-px bg-gray-200" />
-                  <StepBadge
-                    label="Manager"
-                    done={!!loan.managerApprovedAt}
-                    name={loan.managerApprovedByName}
-                  />
+                  <StepBadge label="HR" done={!!loan.hrApprovedAt} name={loan.hrApprovedByName} />
                   <div className="flex-1 h-px bg-gray-200" />
-                  <StepBadge
-                    label="CFO"
-                    done={!!loan.cfoApprovedAt}
-                    name={loan.cfoApprovedByName}
-                  />
+                  <StepBadge label="CFO" done={!!loan.cfoApprovedAt} name={loan.cfoApprovedByName} />
                 </div>
 
                 {loan.purpose && (

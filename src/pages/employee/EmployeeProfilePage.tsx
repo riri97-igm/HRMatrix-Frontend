@@ -3,7 +3,7 @@ import Layout from '../../components/layout/Layout';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchMyProfile } from '../../store/slices/employeeSlice';
-import { User, Mail, Phone, Building2, Calendar, DollarSign } from 'lucide-react';
+import { User, Mail, Phone, Building2, Calendar } from 'lucide-react';
 
 const EmployeeProfilePage = () => {
   const dispatch = useAppDispatch();
@@ -62,11 +62,10 @@ const EmployeeProfilePage = () => {
 
           {/* Status Badge */}
           <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              selectedEmployee.isActive
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${selectedEmployee.isActive
                 ? 'bg-green-100 text-green-700'
                 : 'bg-red-100 text-red-700'
-            }`}
+              }`}
           >
             {selectedEmployee.isActive ? 'Active' : 'Inactive'}
           </span>
@@ -119,11 +118,6 @@ const EmployeeProfilePage = () => {
               icon={<Calendar size={16} className="text-indigo-500" />}
               label="Join Date"
               value={selectedEmployee.joinDate.split('T')[0]}
-            />
-            <InfoRow
-              icon={<DollarSign size={16} className="text-indigo-500" />}
-              label="Base Salary"
-              value={selectedEmployee.baseSalary.toLocaleString()}
             />
           </div>
         </div>

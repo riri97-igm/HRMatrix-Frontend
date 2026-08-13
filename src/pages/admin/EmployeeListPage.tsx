@@ -6,7 +6,7 @@ import {
   fetchEmployees,
   fetchDepartments,
 } from '../../store/slices/employeeSlice';
-import { Users, Plus, Search, Trash2, X, Pencil, Download } from 'lucide-react';
+import { Users, Plus, Search, Trash2, X, Pencil, Download, Eye, EyeOff } from 'lucide-react';
 import { identityApi, employeeApi } from '../../services/api';
 import { exportEmployeesExcel } from '../../utils/exportExcel';
 
@@ -58,6 +58,8 @@ const EmployeeListPage = () => {
     resignationDate: '',
     remarks: '',
   });
+  const [showSalary, setShowSalary] = useState(false);
+  const [showStatusDetail, setShowStatusDetail] = useState(false);
 
   useEffect(() => {
     dispatch(fetchEmployees());
@@ -257,6 +259,36 @@ const EmployeeListPage = () => {
         </div>
       </div>
 
+      {/* Visibility Controls */}
+      <div className="bg-white rounded-2xl shadow-sm p-3 mb-4 flex items-center gap-4">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Show Sensitive Data:
+        </p>
+        <button
+          onClick={() => setShowSalary(!showSalary)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${showSalary
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+        >
+          {showSalary ? <Eye size={13} /> : <EyeOff size={13} />}
+          Salary {showSalary ? '(Visible)' : '(Hidden)'}
+        </button>
+        <button
+          onClick={() => setShowStatusDetail(!showStatusDetail)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${showStatusDetail
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+        >
+          {showStatusDetail ? <Eye size={13} /> : <EyeOff size={13} />}
+          Status Details {showStatusDetail ? '(Visible)' : '(Hidden)'}
+        </button>
+        <p className="text-xs text-gray-400 ml-auto">
+          🔒 Sensitive data is hidden by default
+        </p>
+      </div>
+
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {loading ? (
@@ -272,8 +304,10 @@ const EmployeeListPage = () => {
               <tr className="bg-gray-50 border-b border-gray-100">
                 {[
                   'ID', 'Name', 'Position', 'Department',
-                  'Join Date', `Salary (${selectedCountry?.currency || 'MMK'})`,
-                  'Status', 'Actions',
+                  'Join Date',
+                  `Salary (${selectedCountry?.currency || 'MMK'})`,
+                  'Status',
+                  'Actions',
                 ].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-gray-500 font-semibold">
                     {h}
@@ -308,7 +342,10 @@ const EmployeeListPage = () => {
                     {emp.joinDate.split('T')[0]}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {selectedCountry?.currency || 'MMK'} {emp.baseSalary.toLocaleString()}
+                    {showSalary
+                      ? `${selectedCountry?.currency || 'MMK'} ${emp.baseSalary.toLocaleString()}`
+                      : `${selectedCountry?.currency || 'MMK'} ****,***`
+                    }
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${emp.isActive
@@ -321,8 +358,18 @@ const EmployeeListPage = () => {
                             ? 'bg-gray-100 text-gray-700'
                             : 'bg-yellow-100 text-yellow-700'
                       }`}>
-                      {emp.isActive ? 'Active' : emp.status || 'Inactive'}
+                      {emp.isActive
+                        ? 'Active'
+                        : showStatusDetail
+                          ? (emp.status || 'Inactive')
+                          : 'Inactive'
+                      }
                     </span>
+                    {!emp.isActive && showStatusDetail && emp.remarks && (
+                      <p className="text-xs text-gray-400 mt-1 truncate max-w-24" title={emp.remarks}>
+                        {emp.remarks}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

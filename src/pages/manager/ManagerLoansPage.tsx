@@ -30,7 +30,7 @@ const ManagerLoansPage = () => {
 
     const handleApprove = async (id: number) => {
         await dispatch(managerApproveLoan({ id, comment: comment[id] || '' }));
-        setMsg('Loan approved! Forwarded to CFO for final approval.');
+        setMsg('Loan approved! Forwarded to HR for review.');
         dispatch(fetchPendingManagerLoans());
     };
 
@@ -46,10 +46,20 @@ const ManagerLoansPage = () => {
 
     return (
         <Layout>
+            {/* Header */}
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Loan Approvals</h2>
                 <p className="text-gray-500 text-sm">
-                    Review loan requests from your team — HR has already approved these
+                    Review loan requests from your team
+                </p>
+            </div>
+
+            {/* Flow Info */}
+            <div className="bg-blue-50 rounded-2xl p-4 mb-4 text-sm text-blue-700">
+                <p className="font-semibold mb-1">ℹ️ Your Role in Loan Approval</p>
+                <p className="text-xs">
+                    As Department Manager, you are the <strong>first reviewer</strong>.
+                    After your approval → HR reviews → CFO gives final approval.
                 </p>
             </div>
 
@@ -70,12 +80,13 @@ const ManagerLoansPage = () => {
                         <Landmark size={40} className="mx-auto text-gray-300 mb-3" />
                         <p className="text-gray-400 font-medium">No pending loan approvals! 🎉</p>
                         <p className="text-gray-400 text-sm mt-1">
-                            Your team has no HR-approved loans waiting for your review.
+                            Your team has no pending loan requests.
                         </p>
                     </div>
                 ) : (
                     loans.map((loan) => (
                         <div key={loan.id} className="bg-white rounded-2xl shadow-sm p-5">
+
                             {/* Header */}
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
@@ -115,15 +126,32 @@ const ManagerLoansPage = () => {
                             </div>
 
                             {/* Purpose */}
-                            <p className="text-sm text-gray-600 mb-3 italic">
+                            <p className="text-sm text-gray-600 mb-4 italic">
                                 Purpose: "{loan.purpose}"
                             </p>
 
-                            {/* HR Approval Info */}
-                            <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700">
-                                ✅ HR Approved by <strong>{loan.hrApprovedByName}</strong>
-                                {loan.hrApprovedAt && ` on ${loan.hrApprovedAt.split('T')[0]}`}
-                                {loan.hrComment && ` — "${loan.hrComment}"`}
+                            {/* Approval Timeline */}
+                            <div className="flex items-center gap-2 mb-4">
+                                <ApprovalStep
+                                    label="Manager"
+                                    approved={!!loan.managerApprovedAt}
+                                    current={true}
+                                    approverName={loan.managerApprovedByName}
+                                />
+                                <div className="flex-1 h-px bg-gray-200" />
+                                <ApprovalStep
+                                    label="HR"
+                                    approved={!!loan.hrApprovedAt}
+                                    current={false}
+                                    approverName={loan.hrApprovedByName}
+                                />
+                                <div className="flex-1 h-px bg-gray-200" />
+                                <ApprovalStep
+                                    label="CFO"
+                                    approved={!!loan.cfoApprovedAt}
+                                    current={false}
+                                    approverName={loan.cfoApprovedByName}
+                                />
                             </div>
 
                             {/* Actions */}
@@ -159,5 +187,35 @@ const ManagerLoansPage = () => {
         </Layout>
     );
 };
+
+const ApprovalStep = ({
+    label,
+    approved,
+    current,
+    approverName,
+}: {
+    label: string;
+    approved: boolean;
+    current: boolean;
+    approverName?: string;
+}) => (
+    <div className="flex flex-col items-center">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${approved
+                ? 'bg-green-100 text-green-700'
+                : current
+                    ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-400'
+                    : 'bg-gray-100 text-gray-400'
+            }`}>
+            {approved ? '✓' : label[0]}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">{label}</p>
+        {current && !approved && (
+            <p className="text-xs text-indigo-600 font-semibold">← You</p>
+        )}
+        {approved && approverName && (
+            <p className="text-xs text-green-600 text-center max-w-16 truncate">{approverName}</p>
+        )}
+    </div>
+);
 
 export default ManagerLoansPage;

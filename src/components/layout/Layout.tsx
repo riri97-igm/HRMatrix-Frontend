@@ -1,16 +1,7 @@
 import {
-  LayoutGrid,
-  Users,
-  ClipboardList,
-  DollarSign,
-  User,
-  CheckSquare,
-  Landmark,
-  Globe,
-  Building2,
-  BarChart2,
-  CalendarDays,
-  Layers,
+  LayoutGrid, Users, ClipboardList, DollarSign, User, CheckSquare,
+  Landmark, Globe, Building2, BarChart2, CalendarDays, Layers,
+  Shield,
 } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -39,7 +30,7 @@ const adminNav: NavItem[] = [
   { label: 'Reports', path: '/admin/reports', icon: <BarChart2 size={18} /> },
   { label: 'My Profile', path: '/admin/profile', icon: <User size={18} /> },
   { label: 'Country Policies', path: '/admin/countries', icon: <Globe size={18} /> },
-
+  { label: 'Audit Log', path: '/admin/audit-log', icon: <Shield size={18} /> },
 ];
 
 const managerNav: NavItem[] = [
