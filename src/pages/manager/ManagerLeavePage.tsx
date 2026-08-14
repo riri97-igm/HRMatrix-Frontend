@@ -5,11 +5,13 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchPendingLeaves, reviewLeave } from '../../store/slices/leaveSlice';
 import { CheckCircle, XCircle, ClipboardList } from 'lucide-react';
 
+
 const ManagerLeavePage = () => {
   const dispatch = useAppDispatch();
   const { pendingLeaves, loading } = useAppSelector((state) => state.leave);
   const [comment, setComment] = useState<Record<number, string>>({});
   const [msg, setMsg] = useState('');
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
 
   useEffect(() => {
     dispatch(fetchPendingLeaves());
@@ -135,6 +137,22 @@ const ManagerLeavePage = () => {
                 >
                   <XCircle size={16} />
                   Reject
+                </button>
+              </div>
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setFilter('pending')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${filter === 'pending' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500'
+                    }`}
+                >
+                  Pending
+                </button>
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${filter === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500'
+                    }`}
+                >
+                  All Requests
                 </button>
               </div>
             </div>

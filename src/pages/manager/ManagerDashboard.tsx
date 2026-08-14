@@ -7,6 +7,7 @@ import { fetchPendingLeaves } from '../../store/slices/leaveSlice';
 
 const ManagerDashboard = () => {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const { employees } = useAppSelector((state) => state.employee);
   const { pendingLeaves } = useAppSelector((state) => state.leave);
 
@@ -18,6 +19,14 @@ const ManagerDashboard = () => {
   return (
     <Layout>
       {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">
+          Welcome back, {user?.fullName}! 👋
+        </h2>
+        <p className="text-gray-500 text-sm">
+          Overview of your team and pending approvals.
+        </p>
+      </div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Manager Dashboard</h2>
         <p className="text-gray-500 text-sm">

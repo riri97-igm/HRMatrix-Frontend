@@ -51,6 +51,7 @@ const EmployeeLeavePage = () => {
         ...form,
         employeeName: user?.fullName || '',
         joinDate: selectedEmployee?.joinDate || '',
+        managerId: selectedEmployee?.managerId || null,
       })
     );
     if (applyLeave.fulfilled.match(result)) {
@@ -70,8 +71,8 @@ const EmployeeLeavePage = () => {
     status === 'Approved'
       ? 'bg-green-100 text-green-700'
       : status === 'Rejected'
-      ? 'bg-red-100 text-red-700'
-      : 'bg-yellow-100 text-yellow-700';
+        ? 'bg-red-100 text-red-700'
+        : 'bg-yellow-100 text-yellow-700';
 
   return (
     <Layout>
@@ -94,11 +95,10 @@ const EmployeeLeavePage = () => {
 
       {msg && (
         <div
-          className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${
-            msg.includes('success')
+          className={`px-4 py-3 rounded-lg mb-4 text-sm font-medium ${msg.includes('success')
               ? 'bg-green-50 text-green-700'
               : 'bg-red-50 text-red-700'
-          }`}
+            }`}
         >
           {msg}
         </div>

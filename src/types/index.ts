@@ -24,6 +24,11 @@ export interface Employee {
   status: string;
   resignationDate?: string;
   remarks?: string;
+  address?: string;
+  birthday?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
 }
 
 export interface Department {

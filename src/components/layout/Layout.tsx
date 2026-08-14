@@ -1,10 +1,10 @@
 import {
   LayoutGrid, Users, ClipboardList, DollarSign, User, CheckSquare,
   Landmark, Globe, Building2, BarChart2, CalendarDays, Layers,
-  Shield,
+  Shield, ChevronDown, LogOut,
 } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { logout } from '../../store/slices/authSlice';
@@ -29,7 +29,6 @@ const adminNav: NavItem[] = [
   { label: 'Loans', path: '/admin/loans', icon: <Landmark size={18} /> },
   { label: 'Reports', path: '/admin/reports', icon: <BarChart2 size={18} /> },
   { label: 'Audit Log', path: '/admin/audit-log', icon: <Shield size={18} /> },
-  { label: 'My Profile', path: '/admin/profile', icon: <User size={18} /> },
   { label: 'Country Policies', path: '/admin/countries', icon: <Globe size={18} /> },
 ];
 
@@ -37,11 +36,11 @@ const managerNav: NavItem[] = [
   { label: 'Dashboard', path: '/manager/dashboard', icon: <LayoutGrid size={18} /> },
   { label: 'My Team', path: '/manager/team', icon: <Users size={18} /> },
   { label: 'Leave Approvals', path: '/manager/leaves', icon: <CheckSquare size={18} /> },
+  { label: 'Loan Approvals', path: '/manager/loans', icon: <Landmark size={18} /> },
 ];
 
 const employeeNav: NavItem[] = [
   { label: 'Dashboard', path: '/employee/dashboard', icon: <LayoutGrid size={18} /> },
-  { label: 'My Profile', path: '/employee/profile', icon: <User size={18} /> },
   { label: 'Apply Leave', path: '/employee/leave', icon: <ClipboardList size={18} /> },
   { label: 'My Payslips', path: '/employee/payslips', icon: <DollarSign size={18} /> },
   { label: 'My Loans', path: '/employee/loans', icon: <Landmark size={18} /> },
@@ -55,6 +54,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     dispatch(fetchCountries());
@@ -73,6 +73,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const country = countries.find((c: CountryPolicy) => c.countryCode === e.target.value);
     if (country) dispatch(setSelectedCountry(country));
+  };
+
+  const getProfilePath = () => {
+    if (user?.role === 'Admin') return '/admin/profile';
+    if (user?.role === 'Manager') return '/manager/profile';
+    return '/employee/profile';
   };
 
   return (
@@ -105,7 +111,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               key={item.path}
               to={item.path}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg mb-1 text-sm transition-colors duration-150
-              ${location.pathname === item.path
+                ${location.pathname === item.path
                   ? 'bg-indigo-600 text-white font-semibold'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                 }`}
@@ -118,40 +124,39 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* Country Selector */}
         <div className="px-4 py-3 border-t border-gray-700">
-          <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-            <Globe size={12} /> Country / Payroll Policy
-          </p>
-          <select
-            value={selectedCountry?.countryCode || ''}
-            onChange={handleCountryChange}
-            className="w-full bg-gray-800 text-white text-xs rounded-lg px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">Select Country</option>
-            {countries.map((c: CountryPolicy) => (
-              <option key={c.countryCode} value={c.countryCode}>
-                {c.flagEmoji} {c.countryName} ({c.currency})
-              </option>
-            ))}
-          </select>
-          {selectedCountry && (
-            <div className="mt-2 text-xs text-gray-400 space-y-0.5">
-              <p>💰 {selectedCountry.currency}</p>
-              <p>🏦 {selectedCountry.socialContributionLabel} — Employee {selectedCountry.socialContributionEmployeeRate}%</p>
-              {selectedCountry.hasProgressiveTax && <p>🏛️ Progressive Tax</p>}
-              {selectedCountry.hasAgeBased && <p>👴 Age-based contribution</p>}
+          {/* Country Selector — Admin only */}
+          {user?.role === 'Admin' && (
+            <div className="px-4 py-3 border-t border-gray-700">
+              <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                <Globe size={12} /> Country / Payroll Policy
+              </p>
+              <select
+                value={selectedCountry?.countryCode || ''}
+                onChange={handleCountryChange}
+                className="w-full bg-gray-800 text-white text-xs rounded-lg px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">Select Country</option>
+                {countries.map((c: CountryPolicy) => (
+                  <option key={c.countryCode} value={c.countryCode}>
+                    {c.flagEmoji} {c.countryName} ({c.currency})
+                  </option>
+                ))}
+              </select>
+              {selectedCountry && (
+                <div className="mt-2 text-xs text-gray-400 space-y-0.5">
+                  <p>💰 {selectedCountry.currency}</p>
+                  <p>🏦 {selectedCountry.socialContributionLabel} — Employee {selectedCountry.socialContributionEmployeeRate}%</p>
+                  {selectedCountry.hasProgressiveTax && <p>🏛️ Progressive Tax</p>}
+                  {selectedCountry.hasAgeBased && <p>👴 Age-based contribution</p>}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-700">
-          <p className="text-sm text-gray-400 truncate mb-3">{user?.fullName}</p>
-          <button
-            onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 rounded-lg transition duration-200"
-          >
-            Logout
-          </button>
+        {/* Sidebar Footer */}
+        <div className="px-4 py-4 border-t border-gray-700">
+          <p className="text-xs text-gray-500 truncate">{user?.email}</p>
         </div>
       </aside>
 
@@ -172,15 +177,67 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {/* Notification Bell */}
             <NotificationCenter />
 
-            {/* User Info */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm">
-                {user?.fullName.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-800">{user?.fullName}</p>
-                <p className="text-xs text-gray-400">{user?.role}</p>
-              </div>
+            {/* User Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfile(!showProfile)}
+                className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-xl transition"
+              >
+                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm">
+                  {user?.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-gray-800">{user?.fullName}</p>
+                  <p className="text-xs text-gray-400">{user?.role}</p>
+                </div>
+                <ChevronDown size={14} className={`text-gray-400 transition-transform ${showProfile ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showProfile && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowProfile(false)}
+                  />
+                  <div className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                    {/* User Info */}
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                      <p className="text-sm font-semibold text-gray-800">{user?.fullName}</p>
+                      <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                      <span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 inline-block">
+                        {user?.role}
+                      </span>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          setShowProfile(false);
+                          navigate(getProfilePath());
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition"
+                      >
+                        <User size={15} className="text-gray-400" />
+                        My Profile
+                      </button>
+                      <div className="border-t border-gray-100 my-1" />
+                      <button
+                        onClick={() => {
+                          setShowProfile(false);
+                          handleLogout();
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2 transition"
+                      >
+                        <LogOut size={15} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>

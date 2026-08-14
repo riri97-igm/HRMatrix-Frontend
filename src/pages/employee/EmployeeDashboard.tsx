@@ -9,6 +9,7 @@ import { formatCurrency } from '../../utils/currency';
 
 const EmployeeDashboard = () => {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const { selectedEmployee } = useAppSelector((state) => state.employee);
   const { leaves, balance } = useAppSelector((state) => state.leave);
   const { recentPayslips } = useAppSelector((state) => state.payroll);
@@ -32,7 +33,7 @@ const EmployeeDashboard = () => {
     <Layout>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
-          Welcome, {selectedEmployee?.fullName || 'Employee'}! 👋
+          Welcome, {selectedEmployee?.fullName || user?.fullName}! 👋
         </h2>
         <p className="text-gray-500 text-sm">
           {selectedEmployee?.position} · {selectedEmployee?.departmentName}
